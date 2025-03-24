@@ -45,7 +45,9 @@ async function run() {
         });
       } catch (error) {
         console.error("Error adding campaign:", error);
-        res.status(500).json({ success: false, error: "Failed to add campaign" });
+        res
+          .status(500)
+          .json({ success: false, error: "Failed to add campaign" });
       }
     });
 
@@ -56,7 +58,9 @@ async function run() {
       try {
         const result = await campaignCollection.find().limit(100).toArray();
         if (result.length < 6) {
-          return res.status(404).json({ message: "Not enough campaigns found" });
+          return res
+            .status(404)
+            .json({ message: "Not enough campaigns found" });
         }
         res.json(result);
       } catch (error) {
@@ -71,7 +75,9 @@ async function run() {
     app.get("/campaign/:id", async (req, res) => {
       try {
         const id = req.params.id;
-        const campaign = await campaignCollection.findOne({ _id: new ObjectId(id) });
+        const campaign = await campaignCollection.findOne({
+          _id: new ObjectId(id),
+        });
 
         if (!campaign) {
           return res.status(404).json({ message: "Campaign not found" });
@@ -88,23 +94,29 @@ async function run() {
     // Update a Campaign (Partial Update)
     // -------------------------------
     app.put("/campaign/:id", async (req, res) => {
-      try {
-        const id = req.params.id;
-        const updateData = req.body;
-        const filter = { _id: new ObjectId(id) };
-        const update = { $set: updateData };
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const updateCampaign = req.body;
 
-        const result = await campaignCollection.updateOne(filter, update);
+      const update = {
+        $set: {
+          photoUrl: updateCampaign.photoUrl,
+          titleName: updateCampaign.titleName,
+          name: updateCampaign.name,
+          type: updateCampaign.type,
+          description: updateCampaign.description,
+          amount: updateCampaign.amount,
+          date: updateCampaign.date,
+        },
+      };
 
-        if (result.matchedCount === 0) {
-          return res.status(404).json({ message: "Campaign not found" });
-        }
-
-        res.json({ message: "Campaign updated successfully", result });
-      } catch (error) {
-        console.error("Error updating campaign:", error);
-        res.status(500).json({ message: "Server error", error });
-      }
+      const result = await campaignCollection.updateOne(
+        filter,
+        update,
+        options
+      );
+      res.send(result);
     });
 
     // -------------------------------
@@ -134,10 +146,14 @@ async function run() {
       try {
         const donationData = req.body;
         const result = await donationCollection.insertOne(donationData);
-        res.status(201).json({ success: true, message: "Donation recorded", result });
+        res
+          .status(201)
+          .json({ success: true, message: "Donation recorded", result });
       } catch (error) {
         console.error("Error recording donation:", error);
-        res.status(500).json({ success: false, error: "Failed to record donation" });
+        res
+          .status(500)
+          .json({ success: false, error: "Failed to record donation" });
       }
     });
 
@@ -156,7 +172,6 @@ async function run() {
 
     // Optional Ping to MongoDB for health check
     await client.db("admin").command({ ping: 1 });
-
   } catch (error) {
     console.error("MongoDB connection error:", error);
   } finally {
