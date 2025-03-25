@@ -30,6 +30,7 @@ async function run() {
     const db = client.db("crowdfundingDB");
     const campaignCollection = db.collection("campaigns");
     const donationCollection = db.collection("donation");
+    const userCollection = db.collection("users");
 
     // -------------------------------
     // Create a New Campaign
@@ -170,6 +171,12 @@ async function run() {
       }
     });
 
+    app.post('/users', async(req ,res) => {
+      const newUser = req.body;
+      console.log("creating new user ", newUser);
+      const result = await userCollection.insertOne(newUser);
+      res.send(result);
+    })
     // Optional Ping to MongoDB for health check
     await client.db("admin").command({ ping: 1 });
   } catch (error) {
