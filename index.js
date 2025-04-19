@@ -2,16 +2,18 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
-const jwt = require("jsonwebtoken"); // Currently not used, but ready for future auth
+const jwt = require("jsonwebtoken");
 
 const app = express();
 const port = process.env.PORT || 5000;
 
-// Middleware
-app.use(cors());
-app.use(express.json());
+app.use(
+  cors({
+    origin: ["https://crowd-fund-64305.web.app", "http://localhost:5173"],
+    credentials: true,
+  })
+);
 
-// MongoDB connection URI
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.xo1yp.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 const client = new MongoClient(uri, {
@@ -24,16 +26,18 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    await client.connect();
-    console.log("Connected to MongoDB!");
+    // await client.connect();
+    // console.log("Connected to MongoDB!");
 
     const db = client.db("crowdfundingDB");
     const campaignCollection = db.collection("campaigns");
-    const donationCollection = db.collection("donation");
-    const userCollection = db.collection("users");
+    const donationCollection = client
+      .db("crowdfundingDB")
+      .collection("donation");
+    const userCollection = client.db("crowdfundingDB").collection("users");
 
     // -------------------------------
-    // Create a New Campaign
+    // Create a New Campaig
     // -------------------------------
     app.post("/campaign", async (req, res) => {
       try {
@@ -159,7 +163,7 @@ async function run() {
     });
 
     // -------------------------------
-    // Get All Donations (Optional)
+
     // -------------------------------
     app.get("/donations", async (req, res) => {
       try {
@@ -171,18 +175,18 @@ async function run() {
       }
     });
 
-    app.get('/users', async (req, res) => {
+    app.get("/users", async (req, res) => {
       const cursor = userCollection.find();
       const result = await cursor.toArray();
       res.send(result);
-    })
+    });
 
-    app.post('/users', async(req ,res) => {
+    app.post("/users", async (req, res) => {
       const newUser = req.body;
       console.log("creating new user ", newUser);
       const result = await userCollection.insertOne(newUser);
       res.send(result);
-    })
+    });
     // Optional Ping to MongoDB for health check
     await client.db("admin").command({ ping: 1 });
   } catch (error) {
@@ -194,14 +198,9 @@ async function run() {
 }
 
 run().catch(console.dir);
-
-// -------------------------------
-// Base Route
-// -------------------------------
 app.get("/", (req, res) => {
-  res.send("Crowdfunding server is running!");
+  res.json({ message: "Crowd camping" });
 });
-
 // -------------------------------
 // Start Server
 // -------------------------------
